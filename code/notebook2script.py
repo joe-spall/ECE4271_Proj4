@@ -21,7 +21,7 @@ def removeTestLines(cellText):
 
 def notebook2scriptSingle(fname, destination):
     "Finds cells starting with `#export` and puts them into a new module"
-    fname_out = 'submission.py'
+    fname_out = 'crosswalk_detection.py'
     main_dic = json.load(open(fname,'r',encoding="utf-8"))
     code_cells = [c for c in main_dic['cells'] if is_export(c)]
 
