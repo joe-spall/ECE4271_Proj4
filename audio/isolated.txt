@@ -13,3 +13,8 @@
 3262 3288 crosswalk
 4260 4286 crosswalk
 5270 5296 crosswalk
+1265 1291 crosswalk
+2252 2278 crosswalk
+3262 3288 crosswalk
+4260 4286 crosswalk
+5270 5296 crosswalk
