@@ -272,9 +272,10 @@ def crosswalk_audio_label(audio_file_name):
 
             output_text_file.close()
             print("Crosswalk audio found in " + audio_file_name + " and documented in " + text_file_path)
+            return True
     else:
         print("No crosswalk audio found in " + audio_file_name)
-        return
+        return False
 
 def main():
     print("Starting crosswalk label...")
@@ -291,11 +292,20 @@ def main():
         #changes extracts files and runs on wavs
         current_path = os.getcwd()
         onlyfiles = [f for f in listdir(current_path) if isfile(join(current_path, f))]
+        audio_files = 0
+        crosswalk_audio = 0
+
         for file in onlyfiles:
             if file.endswith(".WAV") or file.endswith(".wav"):
-                crosswalk_audio_label(file)
+                audio_files = audio_files + 1
+
+                found_crosswalk = crosswalk_audio_label(file)
+                if found_crosswalk:
+                    crosswalk_audio = crosswalk_audio + 1
             else:
                 print(file + " not audio, skipped.")
+        print("Found " + str(crosswalk_audio) + " files of " +  str(audio_files) + " had crosswalk sounds.")
+        print("Finished crosswalk label.")
     else:
         print("Please enter more arguments:")
         print("-c: run on .wav audio files in the current directoy")
