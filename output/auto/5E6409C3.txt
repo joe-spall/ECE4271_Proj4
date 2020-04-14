@@ -1,0 +1,11 @@
+11680 11706 crosswalk
+12672 12698 crosswalk
+13674 13700 crosswalk
+14677 14703 crosswalk
+14730 14756 crosswalk
+15680 15706 crosswalk
+16682 16708 crosswalk
+17685 17711 crosswalk
+18677 18703 crosswalk
+19690 19716 crosswalk
+20682 20708 crosswalk

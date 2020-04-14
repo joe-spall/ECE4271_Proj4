@@ -1,0 +1,14 @@
+5674 5700 crosswalk
+6677 6703 crosswalk
+7680 7706 crosswalk
+8672 8698 crosswalk
+9685 9711 crosswalk
+10688 10714 crosswalk
+11680 11706 crosswalk
+11722 11748 crosswalk
+12682 12708 crosswalk
+13674 13700 crosswalk
+14688 14714 crosswalk
+15669 15695 crosswalk
+41098 41124 crosswalk
+42090 42116 crosswalk
