@@ -17,12 +17,13 @@ Use
 
 	With <COMMANDS> arguments being:
 	-c - If the audio files are in the current directory
-	-d <PATH> - If the audio files are in the directory at <PATH>. NOTE - Make sure Python has the ability to read and write files at that <PATH>
+	-d <PATH> - If the audio files are in the directory at <PATH>. 
+	NOTE - Make sure Python has the ability to read and write files at that <PATH>
 
 	Example: 
 	
 	python3 crosswalk_detection.py -d ~/Documents/GitHub/ECE4271_Proj4/audio
 
-	2. The terminal will print showing updates on progress periodicly as all .wav files are analyzed.
- 	The .txt results will be generated in either the current directoy or at the <PATH> of the files as specificed.
+	2. The terminal will print showing updates on progress periodically as all .wav files are analyzed.
+ 	The .txt results will be generated in either the current directory or at the <PATH> of the files as specified.
  	If .txt results already exist in that folder, the results will be appended to the end file.
