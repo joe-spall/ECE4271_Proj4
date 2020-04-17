@@ -1,0 +1,12 @@
+40672 40698 crosswalk
+41674 41700 crosswalk
+42677 42703 crosswalk
+43680 43706 crosswalk
+44672 44698 crosswalk
+45674 45700 crosswalk
+46677 46703 crosswalk
+47669 47695 crosswalk
+48672 48698 crosswalk
+49674 49700 crosswalk
+53258 53284 crosswalk
+54272 54298 crosswalk

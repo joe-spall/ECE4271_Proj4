@@ -1,0 +1,13 @@
+14400 14426 crosswalk
+15402 15428 crosswalk
+16405 16431 crosswalk
+17408 17434 crosswalk
+18400 18426 crosswalk
+20405 20431 crosswalk
+21408 21434 crosswalk
+22410 22436 crosswalk
+23413 23439 crosswalk
+24416 24442 crosswalk
+25408 25434 crosswalk
+51445 51471 crosswalk
+52437 52463 crosswalk

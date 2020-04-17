@@ -170,45 +170,9 @@ def crosswalk_isolation(audio,frequencies,sample_rate = 480000,*,beep_duration= 
 
         if non_zero_row.size > 0:
 
-            pulse_duration_valid = []
+            pulse_duration_valid = duration_validation(non_zero_row,beep_duration)
+            period_valid = period_validation(pulse_duration_valid,beep_period,beep_period_variance)
 
-            ### Duration of pulses ###
-            # Only allows sound pulses that are a minimum length.
-
-            # Checks for consecutive STFT frames that amplitude is non-zero per frequency bin.
-            for k,g in groupby(enumerate(non_zero_row),lambda x:x[0]-x[1]):
-                group = (map(itemgetter(1),g))
-                group = list(map(int,group))
-                # If the current cluster has a long enough duration, it will be added to the list of valid.
-                if len(group) >= beep_duration:
-                    pulse_duration_valid.append((group[0],group[-1]))
-
-            period_valid = np.array([])
-
-            ### Period of pulses ###
-            # Only allows consecutive pulses.
-
-            # Checks if any beeps with the minimum length are found.
-            if len(pulse_duration_valid) > 1:
-                # Goes through all minimum length pulses and determines if they are near other pulses (effectively
-                # clustering).
-                prev_mean = 0
-                for ele_ind in range(0,len(pulse_duration_valid)-1,1):
-                    # Checks before and after current pulse to determine string of pulses.
-                    # Averages position of pulse in frames (effectively time) and compares the position one pulse
-                    # before and after.
-                    curr_mean = int((pulse_duration_valid[ele_ind][0] + pulse_duration_valid[ele_ind][1])/2)
-                    future_mean = int((pulse_duration_valid[ele_ind+1][0] + pulse_duration_valid[ele_ind+1][1])/2)
-                    diff_1 = curr_mean-prev_mean
-                    diff_2 = future_mean-curr_mean
-                    prev_mean = curr_mean
-                    if((beep_period-beep_period_variance < diff_1 < beep_period+beep_period_variance)
-                       or (beep_period-beep_period_variance < diff_2 < beep_period+beep_period_variance)):
-                        # If current pulse position is within range of other pulses, keep
-                        period_valid = np.hstack((period_valid,np.arange(pulse_duration_valid[ele_ind][0],
-                                                                         pulse_duration_valid[ele_ind][1])))
-
-            period_valid = np.unique(period_valid).astype(int)
 
             if len(period_valid) > 1:
                 # Only keeps STFT magnitude amplitude values, zeros out remainder
@@ -217,11 +181,57 @@ def crosswalk_isolation(audio,frequencies,sample_rate = 480000,*,beep_duration= 
 
         data[freq_indexes[row_ind],:] = new_row
 
-    print("Crosswalk isolation: 100%")
 
     output_data = data
+
+    print("Crosswalk isolation: 100%")
+
     return output_data, found_crosswalk
 
+def duration_validation(non_zero_row,beep_duration):
+    pulse_duration_valid = np.array([[-1,-1]])
+
+    ### Duration of pulses ###
+    # Only allows sound pulses that are a minimum length.
+
+    # Checks for consecutive STFT frames that amplitude is non-zero per frequency bin.
+    for k,g in groupby(enumerate(non_zero_row),lambda x:x[0]-x[1]):
+        group = (map(itemgetter(1),g))
+        group = list(map(int,group))
+        # If the current cluster has a long enough duration, but not too long,
+        # it will be added to the list of valid.
+        if len(group) >= beep_duration and len(group) < 2*beep_duration:
+            pulse_duration_valid = np.vstack((pulse_duration_valid,np.array([group[0],group[-1]])))
+
+    pulse_duration_valid = np.delete(pulse_duration_valid,0,0)
+
+    return pulse_duration_valid
+
+def period_validation(data,beep_period,beep_period_variance):
+    period_valid = np.array([])
+
+    ### Period of pulses ###
+    # Only allows consecutive pulses.
+
+    # Checks if any beeps with the minimum length are found.
+    if len(data) > 1:
+        # Goes through all minimum length pulses and determines if they are near other pulses (effectively
+        # clustering).
+        range_center = np.mean(data,axis=1)
+        ind = 0
+        for ele in range_center:
+            min_ele_before = ele-beep_period-beep_period_variance
+            max_ele_before = ele-beep_period+beep_period_variance
+            min_ele_after = ele+beep_period-beep_period_variance
+            max_ele_after = ele+beep_period+beep_period_variance
+            if(np.any((range_center > min_ele_after) & (range_center < max_ele_after)) or
+               np.any((range_center > min_ele_before) & (range_center < max_ele_before))):
+                period_valid = np.hstack((period_valid,np.arange(data[ind][0],
+                                                                  data[ind][1])))
+            ind = ind+1
+
+        period_valid = np.unique(period_valid).astype(int)
+    return period_valid
 
 def crosswalk_times(audio,sample_rate = 480000):
     """
