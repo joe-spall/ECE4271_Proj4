@@ -32,3 +32,4 @@ Use
  	If .txt results already exist in that folder, the results will be appended to the end file. If not, a new file will be created.
 
 NOTE - only crosswalk_detection.py is required. All Jupyter Notebooks in "detection" (and accompanying conversion script notebook2script.py) and "evaluation" are for visuals/verification only. They can be used by installing Jupyter notebook Python libraries.
+Additionally, example output text files are included in "output" folder as well.
