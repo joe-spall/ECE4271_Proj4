@@ -4,7 +4,7 @@ import os.path
 import sys
 from os import listdir
 from os.path import isfile, join
-from sklearn.cluster import MeanShift, estimate_bandwidth
+from sklearn.cluster import MeanShift
 
 
 from operator import itemgetter
