@@ -171,9 +171,10 @@ def crosswalk_isolation(audio,frequencies,sample_rate = 480000,*,beep_duration= 
 
         if non_zero_row.size > 0:
 
+            # Duration validation
             pulse_duration_valid = duration_validation(non_zero_row,beep_duration)
+            # Period validation
             period_valid = period_validation(pulse_duration_valid,beep_period,beep_period_variance)
-
 
             if len(period_valid) > 1:
                 # Only keeps STFT magnitude amplitude values, zeros out remainder
@@ -189,14 +190,27 @@ def crosswalk_isolation(audio,frequencies,sample_rate = 480000,*,beep_duration= 
 
     return output_data, found_crosswalk
 
-def duration_validation(non_zero_row,beep_duration):
+def duration_validation(data,beep_duration):
+    """
+    Validate duration of pulse
+
+    Used to validate duration of a beep. Groups consecutive beeps and determines the length of groups, keeping
+    them if they are in the valid duration range.
+
+    Parameters:
+    data (numpy.ndarray): The Librosa STFT row non-zero index positions to process for duration validation.
+    beep_duration (int): The number of consecutive frames that should be considered a valid beep.
+
+    Returns:
+    pulse_duration_valid (numpy.ndarray): Each row is [beginning,ending] of indexed frames that are a valid length.
+
+    """
+    # Initialization (with values present for 2 column setup)
     pulse_duration_valid = np.array([[-1,-1]])
 
-    ### Duration of pulses ###
-    # Only allows sound pulses that are a minimum length.
-
     # Checks for consecutive STFT frames that amplitude is non-zero per frequency bin.
-    for k,g in groupby(enumerate(non_zero_row),lambda x:x[0]-x[1]):
+    for k,g in groupby(enumerate(data),lambda x:x[0]-x[1]):
+        # Clusters into consecutive groups (ex. 3 5 8 1 9 4 6 -> [1] [3 4 5 6] [8 9])
         group = (map(itemgetter(1),g))
         group = list(map(int,group))
         # If the current cluster has a long enough duration, but not too long,
@@ -204,22 +218,37 @@ def duration_validation(non_zero_row,beep_duration):
         if len(group) >= beep_duration and len(group) < 2*beep_duration:
             pulse_duration_valid = np.vstack((pulse_duration_valid,np.array([group[0],group[-1]])))
 
+    # Clean up before return (removes first entry from init)
     pulse_duration_valid = np.delete(pulse_duration_valid,0,0)
 
     return pulse_duration_valid
 
 def period_validation(data,beep_period,beep_period_variance):
+    """
+    Validate period of pulse
+
+    Used to validate period of beeps. Averages the start and end frame range to determine center of beep.
+    This center is then compared to all other centers and determines if any are within the beep_period
+    (+- beep_period_variance). It is kept if so, and discarded if not.
+
+    Parameters:
+    data (numpy.ndarray): Each row is [beginning,ending] of indexed frames.
+    beep_period (int): The period between beeps in frames that should be present, either before or after.
+    beep_period_variance (int): The variance between period beeps
+
+    Returns:
+    period_valid (numpy.ndarray): Total listed ranges, enumerated, of valid period frame indexes (ex. 3 4 5)
+
+    """
+    # Initialization
     period_valid = np.array([])
 
-    ### Period of pulses ###
-    # Only allows consecutive pulses.
-
-    # Checks if any beeps with the minimum length are found.
+    # Checks if any beeps present
     if len(data) > 1:
-        # Goes through all minimum length pulses and determines if they are near other pulses (effectively
-        # clustering).
+        # Goes through all pulses and averages start and end range for center frame
         range_center = np.mean(data,axis=1)
         ind = 0
+        # Iterates over all centers and checks if it is within beep_period before or after of another beep
         for ele in range_center:
             min_ele_before = ele-beep_period-beep_period_variance
             max_ele_before = ele-beep_period+beep_period_variance
@@ -227,11 +256,13 @@ def period_validation(data,beep_period,beep_period_variance):
             max_ele_after = ele+beep_period+beep_period_variance
             if(np.any((range_center > min_ele_after) & (range_center < max_ele_after)) or
                np.any((range_center > min_ele_before) & (range_center < max_ele_before))):
+                # If valid in range, enumerates all values in range and adds to list
                 period_valid = np.hstack((period_valid,np.arange(data[ind][0],
                                                                   data[ind][1])))
             ind = ind+1
-
+        # Verifies only one of each index and casted to int for use as an index
         period_valid = np.unique(period_valid).astype(int)
+
     return period_valid
 
 def crosswalk_times(audio,sample_rate = 480000):
@@ -255,19 +286,22 @@ def crosswalk_times(audio,sample_rate = 480000):
     times = librosa.frames_to_time(onset_frames, sr=sample_rate).reshape(-1, 1)
 
     ## Clustering ##
-    # Splits clusters into approximately
+    # Splits clusters into approximately bins +- 0.5 seconds
     ms = MeanShift(bandwidth=0.5)
 
+    # Applies bin fitting, labeling
     ms.fit(times)
     labels = ms.labels_
-    cluster_centers = ms.cluster_centers_
-
     labels_unique = np.unique(labels)
-    n_clusters_ = len(labels_unique)
+
     final_times = []
-    for k in range(n_clusters_):
+    # Interates through clusters length
+    for k in range(len(labels_unique)):
+        # Masks values that are part of current cluster
         my_members = labels == k
+        # Assumes cluster is only one element long
         current_cluster = times[my_members, 0]
+        # If cluster is not only one element long, then updates for the average of the cluster
         if(len(times[my_members, 0] > 1)):
             current_cluster = np.mean(times[my_members, 0])
         final_times.append(current_cluster)
@@ -342,8 +376,10 @@ def crosswalk_audio_label(audio_file_name):
             output_text_file = open(text_file_path, access_type)
             # Cycles through all discovered start times and adds the beep_duration_time for the end times
             for time_element in times:
+                # Convert float to int and make millisecond quantity
                 start_time = int(time_element*1000)
                 end_time = int(start_time + beep_duration_time*1000)
+                # Write to text file
                 output_text_file.write(str(start_time) + " " + str(end_time) + " " + "crosswalk\n")
 
             output_text_file.close()
@@ -358,25 +394,26 @@ def main():
     print("Starting crosswalk label...")
     #Checks if enough input arguments are present
     if len(sys.argv) > 1:
+        # Reads in input arguments
         directory_option = sys.argv[1]
-        #changes directory if "-d", stays with current directory if "-c"
-
+        # Changes directory if "-d", stays with current directory if "-c"
         if directory_option == "-d":
             new_directory = sys.argv[2]
             os.chdir(new_directory)
             print("Running on " + new_directory + ".")
         else:
             print("Running on current directory.")
-        #checks directory for files and runs on wavs
+
+        # Checks directory for files and runs on wavs
         current_path = os.getcwd()
         onlyfiles = [f for f in listdir(current_path) if isfile(join(current_path, f))]
         audio_files = 0
         crosswalk_audio = 0
-
+        # Iterates through files, only running on audio WAV files. Keeps track of quantity for stats
         for file in onlyfiles:
             if file.endswith(".WAV") or file.endswith(".wav"):
                 audio_files = audio_files + 1
-
+                # Where actual labeling occurs
                 found_crosswalk = crosswalk_audio_label(file)
                 if found_crosswalk:
                     crosswalk_audio = crosswalk_audio + 1
