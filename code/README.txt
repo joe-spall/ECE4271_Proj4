@@ -7,7 +7,7 @@ Installation
 
 	pip3 install -r requirements.txt
 
-	Or use pip3 to install numpy, librosa, sklearn independently.
+	Or use pip3 to install numpy, librosa, scikit-learn independently.
 
 Use
 
