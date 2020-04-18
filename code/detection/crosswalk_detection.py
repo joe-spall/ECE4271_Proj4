@@ -4,6 +4,7 @@ import os.path
 import sys
 from os import listdir
 from os.path import isfile, join
+from sklearn.cluster import MeanShift, estimate_bandwidth
 
 
 from operator import itemgetter
@@ -243,15 +244,36 @@ def crosswalk_times(audio,sample_rate = 480000):
     audio (numpy.ndarray): The audio for which the timestamps will be generated.
 
     Returns:
-    times ([float]): The list of times in seconds during which a crosswalk started.
+    final_times ([float]): The list of times in seconds during which a crosswalk started.
 
     """
+    ## Time Duration ##
 
     # Determines the start of a beat in frames
     onset_frames = librosa.onset.onset_detect(y=audio, sr=sample_rate,backtrack=True)
     # Converts frames to seconds
-    times = librosa.frames_to_time(onset_frames, sr=sample_rate)
-    return times
+    times = librosa.frames_to_time(onset_frames, sr=sample_rate).reshape(-1, 1)
+
+    ## Clustering ##
+    # Splits clusters into approximately
+    ms = MeanShift(bandwidth=0.5)
+
+    ms.fit(times)
+    labels = ms.labels_
+    cluster_centers = ms.cluster_centers_
+
+    labels_unique = np.unique(labels)
+    n_clusters_ = len(labels_unique)
+    final_times = []
+    for k in range(n_clusters_):
+        my_members = labels == k
+        current_cluster = times[my_members, 0]
+        if(len(times[my_members, 0] > 1)):
+            current_cluster = np.mean(times[my_members, 0])
+        final_times.append(current_cluster)
+
+    final_times = sorted(final_times)
+    return final_times
 
 def crosswalk_audio_label(audio_file_name):
     """
